@@ -1,0 +1,26 @@
+# Environment Variables & Secrets (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Backups and Scratch Files
+*.bak
+*.tmp
+*.log
+scratch/
+test_*.py
+check_*.py
+
+# System & IDE Configs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+
+# Runtime caches
+__pycache__/
+*.pyc
+node_modules/
