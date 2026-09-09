@@ -163,8 +163,37 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 750);
 });
 
-// Dynamic .env Configuration Loader
+// Dynamic Environment Configuration Loader (Vercel Serverless & Local .env)
 async function loadEnvFile() {
+  // 1. Try Vercel Serverless Function first (/api/config)
+  try {
+    const apiRes = await fetch('/api/config');
+    if (apiRes.ok) {
+      const config = await apiRes.json();
+      if (config.GEMINI_API_KEY) {
+        state.geminiApiKey = config.GEMINI_API_KEY;
+        state.geminiApiKeys[0] = config.GEMINI_API_KEY;
+      }
+      if (config.GEMINI_API_KEY_2) {
+        state.geminiApiKey2 = config.GEMINI_API_KEY_2;
+        state.geminiApiKeys[1] = config.GEMINI_API_KEY_2;
+      }
+      if (config.OPENROUTER_API_KEY) state.openRouterApiKey = config.OPENROUTER_API_KEY;
+      if (config.OPENROUTER_MODEL) state.openRouterModel = config.OPENROUTER_MODEL;
+      state.geminiApiKeys = state.geminiApiKeys.filter(Boolean);
+      if (!state.geminiApiKey && state.geminiApiKeys.length > 0) {
+        state.geminiApiKey = state.geminiApiKeys[0];
+      }
+      if (state.geminiApiKey || state.openRouterApiKey) {
+        console.log('SatyaLabel: API configuration successfully loaded from Vercel (/api/config)');
+        return;
+      }
+    }
+  } catch (e) {
+    // Not running on Vercel or /api/config unavailable, fallback to local .env
+  }
+
+  // 2. Try local .env file (when running locally with python/node static server)
   try {
     const res = await fetch('.env');
     if (res.ok) {
@@ -197,7 +226,7 @@ async function loadEnvFile() {
       if (!state.geminiApiKey && state.geminiApiKeys.length > 0) {
         state.geminiApiKey = state.geminiApiKeys[0];
       }
-      console.log('SatyaLabel: API keys dynamically loaded from .env');
+      console.log('SatyaLabel: API keys dynamically loaded from local .env');
     }
   } catch (e) {
     console.log('SatyaLabel: using pre-configured API keys');
