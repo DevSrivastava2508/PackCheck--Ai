@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>SatyaLabel - Legal Metrology Compliance Checker</title>
-  <meta name="description" content="Legal Metrology Compliance Checker for Ministry of Consumer Affairs, Food & Public Distribution" />
+  <title>PackCheck AI - Legal Metrology Compliance Checker</title>
+  <meta name="description" content="PackCheck AI - Legal Metrology Compliance Checker for Ministry of Consumer Affairs, Food & Public Distribution" />
   <link rel="shortcut icon" href="assets/icon.png" />
   <link rel="icon" href="assets/icon.png" />
   <link rel="apple-touch-icon" href="assets/icon.png" />
@@ -37,18 +37,9 @@
   <script>
     (function() {
       try {
-        const savedTheme = localStorage.getItem('satya-theme') || 'light';
+        const savedTheme = localStorage.getItem('packcheck-theme') || localStorage.getItem('satya-theme') || 'dark';
         document.documentElement.className = savedTheme;
         document.documentElement.setAttribute('data-theme', savedTheme);
-
-        // Landing + login are dark-navy only. Set the surface before first
-        // paint so the marketing pages never flash the light palette.
-        const route = (location.hash || '#/').replace('#', '').split('?')[0] || '/';
-        const portal = ['/dashboard', '/upload', '/history', '/settings',
-                        '/rules', '/admin', '/results/'];
-        if (!portal.some(function (r) { return route.indexOf(r) === 0; })) {
-          document.documentElement.setAttribute('data-surface', 'marketing');
-        }
       } catch (e) {}
     })();
   </script>
@@ -56,55 +47,59 @@
 <body class="font-sans antialiased pb-24 md:pb-0 overflow-x-hidden w-full transition-colors duration-300">
   
   <!-- Splash Screen (shown briefly on initial load like original) -->
-  <div id="splash-screen" class="fixed inset-0 z-[9999] bg-[#1E3A8A] flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out">
+  <div id="splash-screen" class="fixed inset-0 z-[9999] bg-[#090a0f] flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out">
     <div class="flex flex-col items-center justify-center -mt-10">
-      <img src="assets/icon-with-text.png" alt="SatyaLabel Logo" class="w-56 h-auto object-contain z-10 drop-shadow-xl" />
-      <div class="flex items-center gap-2 mt-8">
-        <div class="w-2.5 h-2.5 rounded-full bg-white/90 animate-bounce" style="animation-delay:0s"></div>
-        <div class="w-2.5 h-2.5 rounded-full bg-white/90 animate-bounce" style="animation-delay:0.15s"></div>
-        <div class="w-2.5 h-2.5 rounded-full bg-white/90 animate-bounce" style="animation-delay:0.3s"></div>
+      <div class="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center mb-4 shadow-xl backdrop-blur-md">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-400">
+          <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+          <path d="m9 12 2 2 4-4"></path>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2 font-sans">
+        PackCheck <span class="text-blue-400">AI</span>
+      </h1>
+      <p class="text-xs font-mono text-emerald-400 font-semibold tracking-wider mt-1 uppercase">Legal Metrology Compliance</p>
+      <div class="flex items-center gap-2 mt-6">
+        <div class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce" style="animation-delay:0s"></div>
+        <div class="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-bounce" style="animation-delay:0.15s"></div>
+        <div class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce" style="animation-delay:0.3s"></div>
       </div>
       <p class="text-white/70 text-xs font-mono tracking-widest uppercase mt-4">Department of Consumer Affairs</p>
     </div>
   </div>
 
-  <!-- Background Ambient Gradients -->
-  <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-background">
-    <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style="background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')"></div>
-    <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow"></div>
-    <div class="absolute top-[40%] -right-[10%] w-[40%] h-[60%] bg-blue-500/10 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" style="animation-delay:2s"></div>
+  <!-- Global Starry Space Background (All Pages) -->
+  <div class="container stars-container">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>
   </div>
 
   <!-- Navigation Bar -->
-  <header id="main-nav" class="w-full sticky top-0 z-50 bg-[#1E3A8A] shadow-[0_4px_20px_rgba(30,58,138,0.3)] border-b border-[#1E3A8A] transition-colors duration-500">
+  <header id="main-nav" class="w-full sticky top-0 z-50 bg-[#090a0f]/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-colors duration-500">
     <div class="max-w-[1400px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
       <!-- Logo & Govt Header -->
       <a href="#/" class="flex items-center gap-3 group text-decoration-none">
-        <div class="w-10 h-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center shadow-sm relative shrink-0">
-          <div class="absolute inset-0 rounded-full border-[0.5px] border-white/10 m-1"></div>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="text-white z-10">
-            <path d="M12 3v18"></path>
-            <path d="M3 8h18"></path>
-            <path d="M5 8v6a2 2 0 0 0 4 0V8"></path>
-            <path d="M15 8v6a2 2 0 0 0 4 0V8"></path>
-            <path d="M8 21h8"></path>
-            <circle cx="12" cy="3" r="1"></circle>
+        <div class="w-10 h-10 rounded-xl border border-blue-400/30 bg-blue-600/20 flex items-center justify-center shadow-sm relative shrink-0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-400">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+            <path d="m9 12 2 2 4-4"></path>
           </svg>
         </div>
         <div class="flex flex-col justify-center">
           <span class="text-[10px] font-sans tracking-[0.05em] text-white/80 uppercase leading-none mb-1 font-medium">उपभोक्ता मामले विभाग • Dept. of Consumer Affairs</span>
-          <span class="font-semibold tracking-tight text-[17px] text-white leading-none">SatyaLabel <span class="font-normal text-white/80 text-[15px]">Legal Metrology</span></span>
+          <span class="font-semibold tracking-tight text-[17px] text-white leading-none">PackCheck <span class="font-bold text-blue-400 text-[17px]">AI</span> <span class="font-normal text-white/80 text-[14px]">Legal Metrology</span></span>
         </div>
       </a>
 
       <!-- Public Nav Links (when on home/login) -->
       <div id="nav-public-links" class="flex items-center gap-4">
-        <button id="theme-toggle-btn" aria-label="Toggle theme" class="w-9 h-9 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-          <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
-          <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+        <button id="theme-toggle-btn" aria-label="Toggle theme" class="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-sm hover:bg-white/20 transition-all">
+          <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
         </button>
-        <a href="#pipeline" class="text-[13px] font-medium text-white/80 hover:text-white transition-colors hidden sm:block">How it Works</a>
-        <a href="#/login" class="bg-white text-[#1E3A8A] hover:bg-white/90 px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm transition-all hover:scale-105 active:scale-95">Access Console</a>
+        <a href="#pipeline" class="text-[13px] font-medium text-white/90 hover:text-white transition-colors hidden sm:block">How it Works</a>
+        <a href="#/login" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-full text-[13px] font-bold shadow-lg shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 border border-blue-400/30">Access Console</a>
       </div>
 
       <!-- Authenticated Portal Nav Links (when on dashboard/upload/history/settings) -->
@@ -150,9 +145,9 @@
   </main>
 
   <!-- Global Modal for Detailed Scan Report & Notice -->
-  <div id="report-modal" class="fixed inset-0 z-[9000] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-surface text-text-primary w-full max-w-4xl rounded-[24px] border border-border shadow-2xl p-6 md:p-8 relative max-h-[92vh] overflow-y-auto">
-      <button id="close-modal-btn" class="absolute top-5 right-5 text-text-muted hover:text-text-primary p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+  <div id="report-modal" class="fixed inset-0 z-[9000] bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-surface text-white w-full max-w-4xl rounded-[24px] border border-white/20 shadow-2xl p-6 md:p-8 relative max-h-[92vh] overflow-y-auto">
+      <button id="close-modal-btn" class="absolute top-5 right-5 text-white/70 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors z-20">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
       <div id="report-modal-content">

@@ -1,12 +1,12 @@
 /**
- * SatyaLabel - Legal Metrology Compliance Checker
- * Client-Side Core Architecture & Routing Engine
+ * PackCheck AI - Legal Metrology Compliance Checker
+ * Single-file application logic with modular routing, AI integration, and live verification.
  */
 
-// --- STATE MANAGEMENT ---
+// Application State
 const state = {
-  theme: localStorage.getItem('satya-theme') || 'light',
-  user: JSON.parse(localStorage.getItem('satya-user')) || null,
+  theme: localStorage.getItem('packcheck-theme') || localStorage.getItem('satya-theme') || 'dark',
+  user: JSON.parse(localStorage.getItem('packcheck-user') || localStorage.getItem('satya-user')) || null,
   uploadMode: 'physical', // 'physical' | 'web-patrol'
   isScanning: false,
   selectedFile: null,
@@ -185,7 +185,7 @@ async function loadEnvFile() {
         state.geminiApiKey = state.geminiApiKeys[0];
       }
       if (state.geminiApiKey || state.openRouterApiKey) {
-        console.log('SatyaLabel: API configuration successfully loaded from Vercel (/api/config)');
+        console.log('PackCheck AI: API configuration successfully loaded from Vercel (/api/config)');
         return;
       }
     }
@@ -226,33 +226,53 @@ async function loadEnvFile() {
       if (!state.geminiApiKey && state.geminiApiKeys.length > 0) {
         state.geminiApiKey = state.geminiApiKeys[0];
       }
-      console.log('SatyaLabel: API keys dynamically loaded from local .env');
+      console.log('PackCheck AI: API keys dynamically loaded from local .env');
     }
   } catch (e) {
-    console.log('SatyaLabel: using pre-configured API keys');
+    console.log('PackCheck AI: using pre-configured API keys');
   }
 }
 
 // --- THEME HANDLERS ---
 function initTheme() {
-  setTheme(state.theme);
-  const togglePublic = document.getElementById('theme-toggle-btn');
-  const toggleAuth = document.getElementById('auth-theme-toggle-btn');
-  if (togglePublic) togglePublic.addEventListener('click', toggleTheme);
-  if (toggleAuth) toggleAuth.addEventListener('click', toggleTheme);
+  setTheme(state.theme || 'dark');
+
+  // Robust document-level event delegation for all theme toggle buttons
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#theme-toggle-btn, #auth-theme-toggle-btn');
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleTheme();
+    }
+  });
 }
 
 function toggleTheme() {
   const newTheme = state.theme === 'dark' ? 'light' : 'dark';
-  setTheme(newTheme);
+  setTheme(newTheme, true);
 }
 
-function setTheme(theme) {
+function setTheme(theme, notify = false) {
   state.theme = theme;
-  localStorage.setItem('satya-theme', theme);
+  localStorage.setItem('packcheck-theme', theme);
   document.documentElement.className = theme;
   document.documentElement.setAttribute('data-theme', theme);
+
+  const togglePublic = document.getElementById('theme-toggle-btn');
+  const toggleAuth = document.getElementById('auth-theme-toggle-btn');
+
+  const iconHtml = theme === 'dark'
+    ? '<i data-lucide="sun" class="w-4 h-4 text-amber-300"></i>'
+    : '<i data-lucide="moon" class="w-4 h-4 text-slate-800"></i>';
+
+  if (togglePublic) togglePublic.innerHTML = iconHtml;
+  if (toggleAuth) toggleAuth.innerHTML = iconHtml;
+
   if (window.lucide) window.lucide.createIcons();
+  if (notify) {
+    showToast(`Switched to ${theme === 'dark' ? 'Dark Cosmic' : 'Light Clean'} Mode`, 'info');
+  }
 }
 
 // --- SURFACE HANDLER ---
@@ -265,12 +285,7 @@ const PORTAL_PREFIXES = [
 ];
 
 function applySurface(route) {
-  const isPortal = PORTAL_PREFIXES.some((r) => route.startsWith(r));
-  if (isPortal) {
-    document.documentElement.removeAttribute('data-surface');
-  } else {
-    document.documentElement.setAttribute('data-surface', 'marketing');
-  }
+  document.documentElement.removeAttribute('data-surface');
 }
 
 // --- GPS SIMULATION ---
@@ -418,7 +433,7 @@ function ensureAuth(requiredRole = null) {
       role: 'officer',
       jurisdiction: 'Delhi Metrology Circle 1'
     };
-    localStorage.setItem('satya-user', JSON.stringify(state.user));
+    localStorage.setItem('packcheck-user', JSON.stringify(state.user));
   }
 
   if (requiredRole === 'admin' && state.user.role !== 'admin') {
@@ -426,7 +441,7 @@ function ensureAuth(requiredRole = null) {
     state.user.role = 'admin';
     state.user.name = 'System Administrator (Elevated)';
     state.user.email = 'admin@gov.in';
-    localStorage.setItem('satya-user', JSON.stringify(state.user));
+    localStorage.setItem('packcheck-user', JSON.stringify(state.user));
     updateNavigation(window.location.hash.replace('#', ''));
   }
 }
@@ -436,7 +451,7 @@ function setupGlobalListeners() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       state.user = null;
-      localStorage.removeItem('satya-user');
+      localStorage.removeItem('packcheck-user');
       showToast('Successfully logged out of portal.', 'info');
       window.location.hash = '#/';
     });
@@ -483,7 +498,7 @@ function renderLandingPage() {
             </h1>
 
             <p class="sl-sub">
-              SatyaLabel scans packaged commodity labels and checks them against the
+              PackCheck AI scans packaged commodity labels and checks them against the
               Legal Metrology (Packaged Commodities) Rules, 2011 deterministically.
             </p>
 
@@ -627,18 +642,18 @@ function renderLandingPage() {
         </div>
       </section>
 
-      <!-- ======================= WHY SATYALABEL ======================= -->
+      <!-- ======================= WHY PACKCHECK AI ======================= -->
       <section class="sl-section">
         <div class="sl-shell sl-shell--narrow">
           <div class="sl-head sl-reveal">
-            <h2>Why SatyaLabel</h2>
+            <h2>Why PackCheck AI</h2>
             <p>The difference in time is the difference in scale.</p>
           </div>
 
           <div class="sl-compare sl-reveal">
             <div class="sl-compare__tabs">
               <button type="button" class="sl-compare__tab" data-tab="manual">Manual Inspection</button>
-              <button type="button" class="sl-compare__tab is-active" data-tab="ai">SatyaLabel AI</button>
+              <button type="button" class="sl-compare__tab is-active" data-tab="ai">PackCheck AI</button>
             </div>
 
             <div class="sl-compare__body" data-panel="ai">
@@ -883,12 +898,12 @@ function renderLandingPage() {
       <!-- =========================== FOOTER =========================== -->
       <footer class="sl-footer">
         <div style="display:flex;align-items:center;gap:14px">
-          <span class="sl-footer__brand">SatyaLabel</span>
+          <span class="sl-footer__brand">PackCheck AI</span>
           <span class="sl-footer__tri"><i></i><i></i><i></i></span>
         </div>
         <div>
           <div>Smart India Hackathon 2026 &middot; Problem ID SIH26034</div>
-          <div style="margin-top:4px">made by Daksh</div>
+          <div style="margin-top:4px">PackCheck AI Legal Metrology System</div>
         </div>
       </footer>
     </div>
@@ -1215,7 +1230,7 @@ function initLoginInteractions() {
 
   if (btnDemo) {
     btnDemo.addEventListener('click', () => {
-      loginAs('officer', 'demo@satyalabel.gov.in', 'Field Inspector (Demo User)');
+      loginAs('officer', 'demo@packcheck.gov.in', 'Field Inspector (Demo User)');
     });
   }
 }
@@ -1227,7 +1242,7 @@ function loginAs(role, email, name = null) {
     name: name || (role === 'admin' ? 'System Administrator' : 'Field Officer'),
     jurisdiction: 'National Central Enforcement'
   };
-  localStorage.setItem('satya-user', JSON.stringify(state.user));
+  localStorage.setItem('packcheck-user', JSON.stringify(state.user));
   showToast(`Welcome, ${state.user.name}! Accessing Central Operations.`, 'success');
   window.location.hash = '#/dashboard';
 }
@@ -1241,16 +1256,16 @@ function renderDashboardPage() {
   const complianceRate = Math.round((compliant / total) * 100);
 
   return `
-    <div class="max-w-[1400px] mx-auto px-4 md:px-8 py-8 space-y-8">
+    <div class="max-w-[1400px] mx-auto px-4 md:px-8 py-8 space-y-8 text-white">
       <!-- Operations Header Banner -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-surface border border-border shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl mello-card shadow-lg">
         <div class="space-y-1">
-          <div class="flex items-center gap-2 text-xs font-mono font-semibold tracking-wider text-emerald-600 dark:text-emerald-400">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div class="flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             LIVE STATUTORY TELEMETRY • ACTIVE ENFORCEMENT
           </div>
-          <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-text-primary">Department of Consumer Affairs</h1>
-          <p class="text-sm text-text-secondary">Central Legal Metrology Surveillance Operations Console</p>
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Department of Consumer Affairs</h1>
+          <p class="text-sm text-white/80">Central Legal Metrology Surveillance Operations Console</p>
         </div>
         <div class="flex items-center gap-3">
           <a href="#/history" class="mello-btn-secondary !text-xs !py-2.5 !px-4 !rounded-xl flex items-center gap-2">
@@ -1265,43 +1280,43 @@ function renderDashboardPage() {
       <!-- Metric KPI Cards (4 grid) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <!-- Total Inspections -->
-        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-blue-500">
+        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-blue-500 shadow-md">
           <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Total Inspections</span>
-            <span class="p-1.5 rounded-lg bg-blue-500/10 text-blue-600"><i data-lucide="scan-line" class="w-4 h-4"></i></span>
+            <span class="text-xs font-semibold text-white/70 uppercase tracking-wider">Total Inspections</span>
+            <span class="p-1.5 rounded-lg bg-blue-500/20 text-blue-400"><i data-lucide="scan-line" class="w-4 h-4"></i></span>
           </div>
-          <div class="text-3xl font-bold font-mono text-text-primary">${total.toLocaleString()}</div>
-          <span class="text-[11px] text-text-muted mt-1 block">Physical packages &amp; e-commerce listings</span>
+          <div class="text-3xl font-bold font-mono text-white">${total.toLocaleString()}</div>
+          <span class="text-[11px] text-white/70 mt-1 block">Physical packages &amp; e-commerce listings</span>
         </div>
 
         <!-- Verified Compliant -->
-        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-emerald-500">
+        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-emerald-500 shadow-md">
           <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Verified Compliant</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">${complianceRate}% Rate</span>
+            <span class="text-xs font-semibold text-white/70 uppercase tracking-wider">Verified Compliant</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${complianceRate}% Rate</span>
           </div>
-          <div class="text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-400">${compliant.toLocaleString()}</div>
-          <span class="text-[11px] text-text-muted mt-1 block">Full statutory declaration conformity</span>
+          <div class="text-3xl font-bold font-mono text-emerald-400">${compliant.toLocaleString()}</div>
+          <span class="text-[11px] text-white/70 mt-1 block">Full statutory declaration conformity</span>
         </div>
 
         <!-- Violations Detected -->
-        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-red-500">
+        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-red-500 shadow-md">
           <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Violations Detected</span>
-            <span class="p-1.5 rounded-lg bg-red-500/10 text-red-600"><i data-lucide="alert-octagon" class="w-4 h-4"></i></span>
+            <span class="text-xs font-semibold text-white/70 uppercase tracking-wider">Violations Detected</span>
+            <span class="p-1.5 rounded-lg bg-red-500/20 text-red-400"><i data-lucide="alert-octagon" class="w-4 h-4"></i></span>
           </div>
-          <div class="text-3xl font-bold font-mono text-red-600 dark:text-red-400">${nonCompliant.toLocaleString()}</div>
-          <span class="text-[11px] text-text-muted mt-1 block">Statutory show-cause notices issued</span>
+          <div class="text-3xl font-bold font-mono text-red-400">${nonCompliant.toLocaleString()}</div>
+          <span class="text-[11px] text-white/70 mt-1 block">Statutory show-cause notices issued</span>
         </div>
 
         <!-- Awaiting Review -->
-        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-amber-500">
+        <div class="mello-card p-5 rounded-2xl border-l-4 border-l-amber-500 shadow-md">
           <div class="flex justify-between items-start mb-2">
-            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Awaiting Review</span>
-            <span class="p-1.5 rounded-lg bg-amber-500/10 text-amber-600"><i data-lucide="clock" class="w-4 h-4"></i></span>
+            <span class="text-xs font-semibold text-white/70 uppercase tracking-wider">Awaiting Review</span>
+            <span class="p-1.5 rounded-lg bg-amber-500/20 text-amber-400"><i data-lucide="clock" class="w-4 h-4"></i></span>
           </div>
-          <div class="text-3xl font-bold font-mono text-amber-600 dark:text-amber-400">${review}</div>
-          <span class="text-[11px] text-text-muted mt-1 block">Pending field officer physical audit</span>
+          <div class="text-3xl font-bold font-mono text-amber-400">${review}</div>
+          <span class="text-[11px] text-white/70 mt-1 block">Pending field officer physical audit</span>
         </div>
       </div>
 
@@ -1309,22 +1324,22 @@ function renderDashboardPage() {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left: Primary Violation Vectors -->
         <div class="lg:col-span-2 mello-card p-6 rounded-2xl space-y-6">
-          <div class="flex justify-between items-center border-b border-border pb-4">
+          <div class="flex justify-between items-center border-b border-white/15 pb-4">
             <div>
-              <h2 class="font-bold text-lg text-text-primary">Primary Violation Vectors</h2>
-              <p class="text-xs text-text-secondary">Statutory non-compliance distribution by Legal Metrology Rule, 2011</p>
+              <h2 class="font-bold text-lg text-white">Primary Violation Vectors</h2>
+              <p class="text-xs text-white/80">Statutory non-compliance distribution by Legal Metrology Rule, 2011</p>
             </div>
-            <span class="text-xs font-mono text-text-muted">Section 36 Metrics</span>
+            <span class="text-xs font-mono text-white/70">Section 36 Metrics</span>
           </div>
 
           <div class="space-y-4">
             <!-- Vector 1 -->
             <div class="space-y-1.5">
               <div class="flex justify-between text-xs font-semibold">
-                <span class="text-text-primary">Rule 6(1)(e) — MRP Inclusive of Taxes Omission</span>
-                <span class="font-mono text-red-500">42% (149 cases)</span>
+                <span class="text-white">Rule 6(1)(e) — MRP Inclusive of Taxes Omission</span>
+                <span class="font-mono text-red-400 font-bold">42% (149 cases)</span>
               </div>
-              <div class="w-full h-2.5 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+              <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
                 <div class="h-full bg-red-500 rounded-full" style="width: 42%"></div>
               </div>
             </div>
@@ -1332,10 +1347,10 @@ function renderDashboardPage() {
             <!-- Vector 2 -->
             <div class="space-y-1.5">
               <div class="flex justify-between text-xs font-semibold">
-                <span class="text-text-primary">Rule 9(3) — Sub-standard Font Height on PDP Area</span>
-                <span class="font-mono text-amber-500">28% (100 cases)</span>
+                <span class="text-white">Rule 9(3) — Sub-standard Font Height on PDP Area</span>
+                <span class="font-mono text-amber-400 font-bold">28% (100 cases)</span>
               </div>
-              <div class="w-full h-2.5 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+              <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
                 <div class="h-full bg-amber-500 rounded-full" style="width: 28%"></div>
               </div>
             </div>
@@ -1343,10 +1358,10 @@ function renderDashboardPage() {
             <!-- Vector 3 -->
             <div class="space-y-1.5">
               <div class="flex justify-between text-xs font-semibold">
-                <span class="text-text-primary">Rule 6(1)(d) — Ambiguous Month/Year of Packaging</span>
-                <span class="font-mono text-purple-500">18% (64 cases)</span>
+                <span class="text-white">Rule 6(1)(d) — Ambiguous Month/Year of Packaging</span>
+                <span class="font-mono text-purple-400 font-bold">18% (64 cases)</span>
               </div>
-              <div class="w-full h-2.5 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+              <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
                 <div class="h-full bg-purple-500 rounded-full" style="width: 18%"></div>
               </div>
             </div>
@@ -1354,33 +1369,33 @@ function renderDashboardPage() {
             <!-- Vector 4 -->
             <div class="space-y-1.5">
               <div class="flex justify-between text-xs font-semibold">
-                <span class="text-text-primary">Rule 6(1)(f) — Incomplete Consumer Care Channel</span>
-                <span class="font-mono text-blue-500">12% (43 cases)</span>
+                <span class="text-white">Rule 6(1)(f) — Incomplete Consumer Care Channel</span>
+                <span class="font-mono text-blue-400 font-bold">12% (43 cases)</span>
               </div>
-              <div class="w-full h-2.5 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+              <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
                 <div class="h-full bg-blue-500 rounded-full" style="width: 12%"></div>
               </div>
             </div>
           </div>
 
-          <div class="p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-border flex items-center justify-between text-xs text-text-secondary">
-            <span class="flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-blue-500"></i> Section 36 penalties applied per Metrology Act</span>
-            <a href="#/rules" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">View Statutory Rules →</a>
+          <div class="p-4 rounded-xl bg-white/[0.04] border border-white/15 flex items-center justify-between text-xs text-white/80">
+            <span class="flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Section 36 penalties applied per Metrology Act</span>
+            <a href="#/rules" class="text-blue-400 font-semibold hover:underline">View Statutory Rules →</a>
           </div>
         </div>
 
         <!-- Right: Recent Log Feed -->
         <div class="mello-card p-6 rounded-2xl flex flex-col justify-between">
-          <div class="flex justify-between items-center border-b border-border pb-4 mb-4">
-            <h2 class="font-bold text-lg text-text-primary">Recent Inspections</h2>
-            <a href="#/history" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">View All →</a>
+          <div class="flex justify-between items-center border-b border-white/15 pb-4 mb-4">
+            <h2 class="font-bold text-lg text-white">Recent Inspections</h2>
+            <a href="#/history" class="text-xs font-semibold text-blue-400 hover:underline">View All →</a>
           </div>
 
           <div class="space-y-3.5 flex-1">
             ${state.scans.slice(0, 4).map(scan => `
-              <div class="p-3.5 rounded-xl border border-border hover:border-blue-500/50 transition-colors cursor-pointer bg-surface/50" onclick="viewScanReport('${scan.id}')">
+              <div class="p-3.5 rounded-xl border border-white/15 hover:border-blue-400/60 transition-colors cursor-pointer bg-white/[0.04]" onclick="viewScanReport('${scan.id}')">
                 <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[10px] font-mono text-text-muted font-bold">${scan.id}</span>
+                  <span class="text-[10px] font-mono text-white/70 font-bold">${scan.id}</span>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     scan.complianceStatus === 'PASS' ? 'badge-pass' :
                     scan.complianceStatus === 'NON-COMPLIANT' ? 'badge-fail' : 'badge-review'
@@ -1388,8 +1403,8 @@ function renderDashboardPage() {
                     ${scan.complianceStatus}
                   </span>
                 </div>
-                <h4 class="text-xs font-semibold text-text-primary truncate">${scan.productName}</h4>
-                <div class="flex justify-between text-[11px] text-text-muted mt-1">
+                <h4 class="text-xs font-semibold text-white truncate">${scan.productName}</h4>
+                <div class="flex justify-between text-[11px] text-white/70 mt-1">
                   <span>${scan.brand}</span>
                   <span>${scan.timestamp}</span>
                 </div>
@@ -1782,8 +1797,30 @@ function renderPhysicalScanForm() {
       </div>
 
       <!-- Action Button -->
-      <button type="button" id="btn-run-check" class="w-full bg-[#0B1F3A] hover:bg-[#16335C] text-white py-4 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] ${state.isScanning ? 'opacity-60 pointer-events-none' : ''}">
-        ${state.isScanning ? '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing with Google Gemini & OpenRouter...' : '<i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Run Compliance Check'}
+      <button
+        type="button"
+        id="btn-run-check"
+        class="btn-tactile-theme group relative w-full px-8 py-4 font-bold text-white uppercase tracking-wider rounded-2xl bg-blue-600 border-b-[8px] border-blue-900 active:border-b-[0px] active:translate-y-[8px] transition-all duration-100 shadow-[0_15px_25px_-10px_rgba(37,99,235,0.8)] focus:outline-none focus:ring-4 focus:ring-blue-400/50 cursor-pointer ${state.isScanning ? 'opacity-60 pointer-events-none' : ''}"
+      >
+        <span
+          class="btn-tactile-shading absolute inset-0 w-full h-full rounded-2xl bg-gradient-to-t from-black/25 to-transparent pointer-events-none"
+        ></span>
+
+        <span
+          class="btn-tactile-specular absolute top-2 left-3 w-8 h-3 rounded-full bg-white/40 blur-[2px] pointer-events-none"
+        ></span>
+
+        <span class="btn-tactile-content relative flex items-center justify-center gap-2.5 drop-shadow-md text-sm sm:text-base font-extrabold text-white">
+          ${state.isScanning 
+            ? '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Analyzing with Google Gemini & OpenRouter...' 
+            : `<svg class="w-6 h-6 animate-pulse text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3c0 4.5-3.5 8-8 8 4.5 0 8 3.5 8 8 0-4.5 3.5-8 8-8-4.5 0-8-3.5-8-8z"></path>
+                <path d="M19 3v4"></path>
+                <path d="M17 5h4"></path>
+                <circle cx="5.5" cy="18.5" r="1.5" fill="currentColor"></circle>
+              </svg>
+              <span>RUN COMPLIANCE CHECK</span>`}
+        </span>
       </button>
     </div>
   `;
@@ -1817,7 +1854,7 @@ function renderWebPatrolForm() {
           <button type="button" class="btn-web-preset px-2.5 py-1.5 rounded-lg border border-border bg-surface text-[11px] font-semibold text-text-primary hover:border-amber-500 transition-colors flex items-center gap-1.5" data-url="https://www.amazon.in/dp/B087F91J92/pure-origins-raw-honey" data-hint="Himalayan Organic Raw Honey (500g)">
             <span>🛒 Amazon IN</span>
           </button>
-          <button type="button" class="btn-web-preset px-2.5 py-1.5 rounded-lg border border-border bg-surface text-[11px] font-semibold text-text-primary hover:border-blue-500 transition-colors flex items-center gap-1.5" data-url="https://www.flipkart.com/nutridelight-cookies-400g/p/itm12345" data-hint="NutriDelight Almond Cookies (400g)">
+          <button type="button" class="btn-web-preset px-2.5 py-1.5 rounded-lg border border-border bg-surface text-[11px] font-semibold text-text-primary hover:border-blue-500 transition-colors flex items-center gap-1.5" data-url="https://flipkart.com/nutridelight-cookies-400g/p/itm12345" data-hint="NutriDelight Almond Cookies (400g)">
             <span>🛍️ Flipkart</span>
           </button>
           <button type="button" class="btn-web-preset px-2.5 py-1.5 rounded-lg border border-border bg-surface text-[11px] font-semibold text-text-primary hover:border-emerald-500 transition-colors flex items-center gap-1.5" data-url="https://blinkit.com/prn/vedic-pure-cow-ghee-1l/prid/394821" data-hint="Vedic Pure A2 Cow Ghee (1 Litre)">
@@ -1846,9 +1883,33 @@ function renderWebPatrolForm() {
       </div>
 
       <!-- Action Button -->
-      <button type="button" id="btn-run-web-check" class="w-full bg-[#0B1F3A] hover:bg-[#16335C] text-white py-4 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] ${state.isScanning ? 'opacity-60 pointer-events-none' : ''}">
-        ${state.isScanning ? '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Scraping & Auditing Declarations...' : '<i data-lucide="search" class="w-4 h-4 text-blue-400"></i> Run Web Patrol Audit'}
+      <button
+        type="button"
+        id="btn-run-web-check"
+        class="btn-tactile-theme group relative w-full px-8 py-4 font-bold text-white uppercase tracking-wider rounded-2xl bg-blue-600 border-b-[8px] border-blue-900 active:border-b-[0px] active:translate-y-[8px] transition-all duration-100 shadow-[0_15px_25px_-10px_rgba(37,99,235,0.8)] focus:outline-none focus:ring-4 focus:ring-blue-400/50 cursor-pointer ${state.isScanning ? 'opacity-60 pointer-events-none' : ''}"
+      >
+        <span
+          class="btn-tactile-shading absolute inset-0 w-full h-full rounded-2xl bg-gradient-to-t from-black/25 to-transparent pointer-events-none"
+        ></span>
+
+        <span
+          class="btn-tactile-specular absolute top-2 left-3 w-8 h-3 rounded-full bg-white/40 blur-[2px] pointer-events-none"
+        ></span>
+
+        <span class="btn-tactile-content relative flex items-center justify-center gap-2.5 drop-shadow-md text-sm sm:text-base font-extrabold text-white">
+          ${state.isScanning 
+            ? '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Scraping & Auditing Declarations...' 
+            : `<svg class="w-6 h-6 animate-pulse text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3c0 4.5-3.5 8-8 8 4.5 0 8 3.5 8 8 0-4.5 3.5-8 8-8-4.5 0-8-3.5-8-8z"></path>
+                <path d="M19 3v4"></path>
+                <path d="M17 5h4"></path>
+                <circle cx="5.5" cy="18.5" r="1.5" fill="currentColor"></circle>
+              </svg>
+              <span>RUN WEB PATROL AUDIT</span>`}
+        </span>
       </button>
+
+
     </div>
   `;
 }
@@ -2183,7 +2244,7 @@ async function triggerScan(isWeb) {
       geminiSuccess = true;
       // Advance rotation pointer for next scan (round-robin key rotation concept)
       state.currentGeminiKeyIndex = (item.index + 1) % state.geminiApiKeys.length;
-      localStorage.setItem('satya-gemini-key-index', state.currentGeminiKeyIndex.toString());
+      localStorage.setItem('packcheck-gemini-key-index', state.currentGeminiKeyIndex.toString());
       console.log(`[AI Pipeline] Gemini Key #${item.keyNum} succeeded! Next scan will rotate to Key #${state.currentGeminiKeyIndex + 1}.`);
       break;
     } catch (geminiErr) {
@@ -2221,7 +2282,7 @@ async function triggerScan(isWeb) {
 
   // Save new scan to repository
   state.scans.unshift(aiResult);
-  localStorage.setItem('satya-scans', JSON.stringify(state.scans));
+  localStorage.setItem('packcheck-scans', JSON.stringify(state.scans));
 
   // Confetti on Compliant!
   if (aiResult.complianceStatus === 'PASS' && window.confetti) {
@@ -2484,7 +2545,7 @@ Return ONLY a valid JSON object matching this schema:
           'Authorization': `Bearer ${state.openRouterApiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin || 'http://localhost:8000',
-          'X-Title': 'SatyaLabel Legal Metrology Inspector'
+          'X-Title': 'PackCheck AI Legal Metrology Inspector'
         },
         body: JSON.stringify({
           model: model,
@@ -2732,7 +2793,7 @@ function exportToCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `satyalabel_statutory_audit_${Date.now()}.csv`;
+  a.download = `packcheck_statutory_audit_${Date.now()}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -2741,7 +2802,7 @@ function exportToCsv() {
 
 function deleteScanRecord(id) {
   state.scans = state.scans.filter(s => s.id !== id);
-  localStorage.setItem('satya-scans', JSON.stringify(state.scans));
+  localStorage.setItem('packcheck-scans', JSON.stringify(state.scans));
   showToast(`Record ${id} removed from ledger.`, 'info');
   const viewport = document.getElementById('app-viewport');
   viewport.innerHTML = renderHistoryPage();
@@ -2770,152 +2831,102 @@ function renderReportContent(scan) {
   const isFail = scan.complianceStatus === 'NON-COMPLIANT';
 
   return `
-    <div class="space-y-6">
-      <!-- Header with Close -->
-      <div class="flex items-center justify-between border-b border-border pb-3">
-        <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
-          <i data-lucide="scale" class="w-4 h-4 text-blue-600"></i>
-          Compliance Inspection Report
-        </h3>
-        <button class="p-1.5 text-text-muted hover:text-text-primary rounded-lg hover:bg-black/5 dark:hover:bg-white/5" onclick="document.getElementById('report-modal').classList.add('hidden')">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+    <div class="space-y-4 text-white">
+      <!-- Product Image Banner -->
+      <div class="w-full max-h-[220px] rounded-2xl border border-white/15 bg-black/40 overflow-hidden shadow-inner flex items-center justify-center p-2 relative">
+        ${state.previewUrl ? `
+          <img src="${state.previewUrl}" alt="Specimen Packaging" class="max-h-[200px] w-auto object-contain rounded-lg" />
+        ` : `
+          <div class="w-full py-8 flex flex-col items-center justify-center text-center text-white">
+            <i data-lucide="package" class="w-10 h-10 text-white/50 mb-2"></i>
+            <span class="text-xs font-mono font-bold text-white">${scan.productName}</span>
+            <span class="text-[10px] text-white/70">${scan.brand} • Specimen Packaging</span>
+          </div>
+        `}
       </div>
 
-      <!-- Statutory Determination Banner -->
-      <div class="p-5 rounded-2xl border-2 flex items-center justify-between gap-4 ${
-        isPass ? 'bg-emerald-500/10 border-emerald-500 text-emerald-800 dark:text-emerald-200' :
-        isFail ? 'bg-red-500/10 border-red-500 text-red-800 dark:text-red-200' :
-        'bg-amber-500/10 border-amber-500 text-amber-800 dark:text-amber-200'
-      }">
-        <div>
-          <div class="text-lg font-extrabold tracking-tight">
-            ${isPass ? '✅ SAHI HAI (LEGAL COMPLIANT)' : isFail ? '❌ SAHI NAHI HAI (STATUTORY VIOLATIONS)' : '⚠️ REVIEW REQUIRED'}
-          </div>
-          <p class="text-xs font-medium opacity-90 mt-1 leading-relaxed max-w-xl">
-            ${isPass 
-              ? 'Yeh product label Legal Metrology (Packaged Commodities) Rules, 2011 ke sabhi statutory standards ko pura karta hai.'
-              : 'Is label par mandatory declarations missing ya rules ke virudh paye gaye hain. Legal Metrology Act Section 36 ke antargat statutory notice prastavit hai.'}
-          </p>
+      <!-- Inspection Engine Badge -->
+      <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/15 space-y-1">
+        <div class="flex items-center gap-2 text-[11px] font-mono font-bold uppercase text-white tracking-wider">
+          <i data-lucide="cpu" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span>INSPECTION ENGINE: ${scan.inspectionEngine || 'DETERMINISTIC RULE ENGINE (LOCAL FALLBACK)'}</span>
         </div>
-        <div class="flex flex-col items-end gap-1.5 shrink-0">
-          <span class="px-4 py-1.5 rounded-full text-xs font-extrabold font-mono tracking-wider ${
-            isPass ? 'badge-pass' : isFail ? 'badge-fail' : 'badge-review'
-          }">
-            ${scan.complianceStatus}
-          </span>
-          <span class="text-[10px] font-mono text-text-muted">Sample Ref: ${scan.id}</span>
-        </div>
+        <p class="text-xs text-white/90 leading-relaxed pl-5.5">
+          ${scan.verdictSummary || (isPass 
+            ? 'Yeh product label Legal Metrology Rules 2011 ke hisaab se puri tarah compliant hai.'
+            : 'Is label par mandatory statutory declarations missing ya rules ke virudh paye gaye hain.')}
+        </p>
       </div>
 
-      <!-- Product Image & Metadata Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
-        <!-- Left: Product Image -->
-        <div class="md:col-span-5 space-y-2">
-          <span class="text-xs font-bold text-text-primary flex items-center gap-1.5">
-            <i data-lucide="scan" class="w-4 h-4 text-blue-500"></i>
-            Product Specimen
-          </span>
-          <div class="w-full aspect-[4/3] rounded-2xl border border-border bg-slate-950 overflow-hidden shadow-inner flex items-center justify-center">
-            ${state.previewUrl ? `
-              <img src="${state.previewUrl}" alt="Specimen Packaging" class="w-full h-full object-contain" />
-            ` : `
-              <div class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-                <i data-lucide="package" class="w-12 h-12 text-slate-500 mb-2"></i>
-                <span class="text-xs font-mono font-bold">${scan.productName}</span>
-                <span class="text-[10px] text-slate-400">${scan.brand} • Specimen Packaging</span>
-              </div>
-            `}
-          </div>
+      <!-- Extracted Declarations Grid (2x2) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/15 space-y-1">
+          <span class="text-[10px] font-mono text-white/70 uppercase tracking-widest block font-semibold">DECLARED MRP</span>
+          <span class="text-xs font-bold text-white font-mono block">${scan.mrp}</span>
         </div>
-
-        <!-- Right: Extracted Statutory Metadata -->
-        <div class="md:col-span-7 space-y-3">
-          <!-- Inspection Engine Badge -->
-          <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-start gap-2.5">
-            <i data-lucide="cpu" class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5"></i>
-            <div class="min-w-0">
-              <span class="text-[10px] font-mono uppercase font-bold text-blue-600 dark:text-blue-400 block">
-                Inspection Engine: ${scan.inspectionEngine || 'Gemini 2.5 Flash Vision'}
-              </span>
-              <p class="text-xs text-text-secondary mt-0.5 leading-relaxed">
-                ${scan.verdictSummary || (isPass 
-                  ? 'All mandatory packaging declarations validated under Legal Metrology Rules 2011.'
-                  : 'Mandatory statutory declarations missing or violating LMPC standards.')}
-              </p>
-            </div>
-          </div>
-
-          <!-- Extracted Declarations Grid -->
-          <div class="grid grid-cols-2 gap-2.5">
-            <div class="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-border">
-              <span class="text-[10px] font-mono text-text-muted uppercase block">Declared MRP</span>
-              <span class="text-xs font-bold text-text-primary font-mono">${scan.mrp}</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-border">
-              <span class="text-[10px] font-mono text-text-muted uppercase block">Net Quantity</span>
-              <span class="text-xs font-bold text-text-primary font-mono">${scan.netQty}</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-border">
-              <span class="text-[10px] font-mono text-text-muted uppercase block">Mfg Month / Year</span>
-              <span class="text-xs font-bold text-text-primary font-mono">${scan.mfgDate}</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-border">
-              <span class="text-[10px] font-mono text-text-muted uppercase block">Country of Origin</span>
-              <span class="text-xs font-bold text-text-primary">${scan.countryOfOrigin || 'India'}</span>
-            </div>
-          </div>
-
-          <!-- Manufacturer Details -->
-          <div class="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-border text-xs space-y-1">
-            <div class="flex items-center justify-between text-[10px] font-mono text-text-muted uppercase">
-              <span>Manufacturer / Packer</span>
-              <span>Rule 6(1)(b)</span>
-            </div>
-            <p class="font-semibold text-text-primary">${scan.manufacturer}</p>
-            <p class="text-[11px] text-text-secondary font-mono">Care: ${scan.consumerCare}</p>
-          </div>
+        <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/15 space-y-1">
+          <span class="text-[10px] font-mono text-white/70 uppercase tracking-widest block font-semibold">NET QUANTITY</span>
+          <span class="text-xs font-bold text-white font-mono block">${scan.netQty}</span>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/15 space-y-1">
+          <span class="text-[10px] font-mono text-white/70 uppercase tracking-widest block font-semibold">MFG MONTH / YEAR</span>
+          <span class="text-xs font-bold text-white font-mono block">${scan.mfgDate}</span>
+        </div>
+        <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/15 space-y-1">
+          <span class="text-[10px] font-mono text-white/70 uppercase tracking-widest block font-semibold">COUNTRY OF ORIGIN</span>
+          <span class="text-xs font-bold text-white block">${scan.countryOfOrigin || 'India'}</span>
         </div>
       </div>
 
-      <!-- Violations List -->
-      ${scan.violations.length ? `
+      <!-- Manufacturer Details Full Width -->
+      <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/15 space-y-1">
+        <div class="flex items-center justify-between text-[10px] font-mono text-white/70 uppercase tracking-widest font-semibold">
+          <span>MANUFACTURER / PACKER</span>
+          <span class="tracking-normal font-bold">RULE 6(1)(B)</span>
+        </div>
+        <p class="text-xs font-bold text-white">${scan.manufacturer}</p>
+        <p class="text-[11px] text-white/80 font-mono">Care: ${scan.consumerCare}</p>
+      </div>
+
+      <!-- Statutory Verdict / Violation Banner -->
+      ${scan.violations && scan.violations.length > 0 ? `
         <div class="space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-red-600 flex items-center gap-1.5">
-            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Statutory Violations Detected (${scan.violations.length})
-          </h4>
+          <div class="p-3.5 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-200 flex items-center gap-2.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400 shrink-0"></i>
+            <span class="font-semibold">Statutory Violations Detected (${scan.violations.length}) under Legal Metrology Act, Section 36</span>
+          </div>
           <div class="space-y-2">
             ${scan.violations.map(v => `
-              <div class="p-3.5 rounded-xl border border-red-500/30 bg-red-500/5 space-y-1">
+              <div class="p-3.5 rounded-xl border border-red-500/30 bg-white/[0.03] space-y-1">
                 <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-red-600 font-mono">${v.rule}</span>
-                  <span class="font-mono text-[10px] px-2 py-0.5 rounded bg-red-500/10 text-red-600 font-bold">${v.severity}</span>
+                  <span class="font-bold text-red-400 font-mono">${v.rule}</span>
+                  <span class="font-mono text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-300 font-bold">${v.severity}</span>
                 </div>
-                <p class="text-xs text-text-primary leading-relaxed">${v.desc}</p>
-                <div class="text-[10px] font-mono text-text-muted pt-1 border-t border-red-500/20">
-                  Statutory Penalty: <strong class="text-red-500">${v.penalty}</strong>
+                <p class="text-xs text-white leading-relaxed">${v.desc}</p>
+                <div class="text-[10px] font-mono text-white/70 pt-1 border-t border-white/10">
+                  Statutory Penalty: <strong class="text-red-400">${v.penalty}</strong>
                 </div>
               </div>
             `).join('')}
           </div>
         </div>
       ` : `
-        <div class="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-xs text-emerald-600 flex items-center gap-2">
-          <i data-lucide="check-circle" class="w-5 h-5"></i>
-          <span>All mandatory statutory declarations comply with Legal Metrology (Packaged Commodities) Rules, 2011.</span>
+        <div class="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-xs text-emerald-200 flex items-center gap-2.5">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span class="font-semibold">All mandatory statutory declarations comply with Legal Metrology (Packaged Commodities) Rules, 2011.</span>
         </div>
       `}
 
       <!-- Conformity Checks Checklist -->
-      <div class="space-y-2">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-text-muted">Conformity Checks</h4>
+      <div class="space-y-2 pt-1">
+        <h4 class="text-[11px] font-mono font-bold uppercase tracking-wider text-white">CONFORMITY CHECKS</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          ${scan.passedRules.map(r => `
-            <div class="p-2.5 rounded-lg bg-black/5 dark:bg-white/5 border border-border text-xs flex items-start gap-2">
-              <i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
-              <div>
-                <strong class="font-mono text-text-primary">${r.rule}:</strong>
-                <span class="text-text-muted ml-1">${r.desc}</span>
+          ${(scan.passedRules || []).map(r => `
+            <div class="p-3 rounded-xl bg-white/[0.04] border border-white/15 text-xs flex items-start gap-2.5">
+              <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5"></i>
+              <div class="leading-relaxed">
+                <strong class="font-mono text-white font-bold">${r.rule}:</strong>
+                <span class="text-white/80 ml-1">${r.desc}</span>
               </div>
             </div>
           `).join('')}
@@ -2923,11 +2934,11 @@ function renderReportContent(scan) {
       </div>
 
       <!-- Actions Footer -->
-      <div class="flex justify-between items-center pt-4 border-t border-border">
-        <button class="mello-btn-secondary !text-xs !py-2 !px-4 !rounded-lg" onclick="document.getElementById('report-modal').classList.add('hidden')">
+      <div class="flex justify-between items-center pt-4 border-t border-white/15">
+        <button class="bg-white/10 hover:bg-white/20 text-white border border-white/20 py-2.5 px-6 text-xs font-semibold rounded-xl transition-all hover:scale-105 active:scale-95" onclick="document.getElementById('report-modal').classList.add('hidden')">
           Close
         </button>
-        <button class="mello-btn-primary !text-xs !py-2 !px-4 !rounded-lg flex items-center gap-2" onclick="window.print()">
+        <button class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/30 py-2.5 px-6 text-xs font-bold rounded-xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95" onclick="window.print()">
           <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Report (PDF)
         </button>
       </div>
@@ -2967,7 +2978,7 @@ function renderSettingsPage() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
             <span class="text-text-muted uppercase font-semibold">Platform Version</span>
-            <p class="text-text-primary font-mono mt-0.5">SatyaLabel v2.5.0 (Production Build)</p>
+            <p class="text-text-primary font-mono mt-0.5">PackCheck AI v2.5.0 (Production Build)</p>
           </div>
           <div>
             <span class="text-text-muted uppercase font-semibold">Statutory Grounding Act</span>
@@ -3100,7 +3111,7 @@ function renderAdminCommandPage() {
           </span>
           <h2 class="text-xl font-bold text-text-primary">Scan with Smartphone Camera</h2>
           <div class="p-4 bg-white rounded-2xl shadow-md border border-border inline-block">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://satyalabel.vercel.app/upload" alt="Jury QR Code" class="w-44 h-44" />
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://packcheck-ai.vercel.app/upload" alt="Jury QR Code" class="w-44 h-44" />
           </div>
           <p class="text-xs text-text-muted max-w-sm">
             Allows judges and field evaluators to scan physical commodity packages directly using mobile browsers without app download.

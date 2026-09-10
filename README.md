@@ -1,4 +1,4 @@
-# SatyaLabel - Legal Metrology Compliance Checker & PackCheck AI
+# PackCheck AI - Legal Metrology Compliance Checker
 
 An intelligent compliance checking platform for packaged commodities adhering to the **Legal Metrology (Packaged Commodities) Rules, 2011 (LMPC Rules, 2011)** for the Ministry of Consumer Affairs, Food & Public Distribution, Government of India.
 
@@ -27,8 +27,8 @@ An intelligent compliance checking platform for packaged commodities adhering to
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/dakshgoyal1812/Satyalabel.git
-cd Satyalabel
+git clone https://github.com/DevSrivastava2508/PackCheck--Ai.git
+cd PackCheck--Ai
 ```
 
 ### 2. Configure Environment Variables
